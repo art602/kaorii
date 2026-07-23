@@ -10,8 +10,8 @@ TOKEN = "8739520899:AAGJY_4dGtyUoHS80iK1uqXI29gLruGnTnQ"
 BOT_NAME = "kaorii"
 
 # ================== ХРАНИЛИЩА ==================
-user_data = {}       # {chat_id: {user_id: {xp, level, coins, married_to, children, last_daily, last_work, last_sex, msg_count, boobs_size}}}
-marriages = {}       # {chat_id: [(user1_id, user2_id, date)]}
+user_data = {}
+marriages = {}
 
 # ================== ИНИЦИАЛИЗАЦИЯ ==================
 bot = Bot(token=TOKEN)
@@ -59,6 +59,22 @@ SEX_FAIL_MESSAGES = [
     "❌ НЕ ВЫШЛО... {partner} СКАЗАЛ(А) ЧТО ТЫ СЛИШКОМ СТРАННЫЙ(АЯ)",
 ]
 
+LICK_MESSAGES = [
+    "👅 {licker} ОТЛИЗАЛ {target}! ВОТ ЭТО СТРАСТЬ! 💦",
+    "👅 {licker} СТРАСТНО ОТЛИЗАЛ {target}! ТАМ ВСЁ МОКРОЕ! 💦",
+    "👅 {licker} ОТЛИЗАЛ {target} ТАК, ЧТО ТОТ(ТА) ЗАКРИЧАЛ(А)! 💦",
+    "👅 {licker} ПОДОШЁЛ СЗАДИ И ОТЛИЗАЛ {target}! 💦",
+    "👅 МОКРОЕ ДЕЛО: {licker} ОТЛИЗАЛ {target}! 💦",
+    "👅 {licker} ОТЛИЗАЛ {target} ДО БЛЕСКА! 💦",
+    "👅 {licker} ОТЛИЗАЛ {target} ТАК, ЧТО ВСЕ ЗАВИДУЮТ! 💦",
+]
+
+LICK_SELF_MESSAGES = [
+    "👅 {licker} ПОПЫТАЛСЯ ОТЛИЗАТЬ САМ СЕБЯ... ГИБКИЙ, СУКА! 🤸",
+    "👅 {licker} ОТЛИЗАЛ САМ СЕБЯ! КАК ТЫ ЭТО СДЕЛАЛ?! 🤯",
+    "👅 {licker} ИЗВЕРНУЛСЯ И ОТЛИЗАЛ СЕБЯ! ЦИРКАЧ! 🎪",
+]
+
 BABY_NAMES = [
     "ПУПСИК", "БУЛОЧКА", "ПОНЧИК", "КОТЛЕТКА", "ПИРОЖОК",
     "МАЛЫШ", "КАРАПУЗ", "БУСИНКА", "ПУШИНКА", "ЗАЙЧОНОК",
@@ -76,8 +92,8 @@ def get_user_data(chat_id, user_id):
             "xp": 0, "level": 1, "coins": 100,
             "married_to": None, "children": [],
             "last_daily": None, "last_work": None,
-            "last_sex": None, "msg_count": 0,
-            "boobs_size": 0  # Размер сисек в см
+            "last_sex": None, "last_lick": None,
+            "msg_count": 0, "boobs_size": 0
         }
     return user_data[chat_id][user_id]
 
@@ -95,12 +111,12 @@ def get_rank_name(level):
     else: return "БОГ 💀"
 
 def get_boobs_emoji(size):
-    if size == 0: return "🟫🟫"  # Плоская
-    elif size < 5: return "🍒"   # Маленькие
-    elif size < 15: return "🍊🍊"  # Средние
-    elif size < 30: return "🍈🍈"  # Большие
-    elif size < 50: return "🎈🎈"  # Огромные
-    else: return "🎃🎃"  # ГИГАНТСКИЕ
+    if size == 0: return "🟫🟫"
+    elif size < 5: return "🍒"
+    elif size < 15: return "🍊🍊"
+    elif size < 30: return "🍈🍈"
+    elif size < 50: return "🎈🎈"
+    else: return "🎃🎃"
 
 def marriage_keyboard(user1_id, user2_id):
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -124,13 +140,8 @@ async def start(message: types.Message):
         f"🔥 ЗОВИ МЕНЯ: Каори\n"
         f"📊 Каори инфа [вопрос] — узнай шансы\n"
         f"🎯 Каори кто [текст] — выберу случайного\n"
-        f"📋 команды — список всех команд\n\n"
-        f"💬 фарма, баланс, топ, брак, секс, сиськи..."
+        f"📋 команды — список всех команд"
     )
-
-@dp.message(Command("help"))
-async def help_cmd(message: types.Message):
-    await show_commands(message)
 
 # ================== ОСНОВНОЙ ОБРАБОТЧИК ==================
 @dp.message()
@@ -153,7 +164,13 @@ async def handle_message(message: types.Message):
 
     # ========== ОСОБЫЕ ФРАЗЫ ==========
 
-    # Анкуд
+    # Анкуд отлизал Каори / Каори отлизала Анкуду
+    if ("анкуд" in text_lower and "каори" in text_lower and 
+        ("отлиз" in text_lower or "лизал" in text_lower or "лизать" in text_lower or "лижет" in text_lower)):
+        await message.answer("👅💕 АНКУД ОТЛИЗАЛ КАОРИ! ЭТО БЫЛО ЛУЧШЕЕ, ЧТО СЛУЧАЛОСЬ В ЭТОМ ЧАТЕ! КАОРИ ДОВОЛЬНА И КРИЧАЛА ОТ СЧАСТЬЯ! 💦😍")
+        return
+
+    # Просто анкуд + каори
     if "анкуд" in text_lower and "каори" in text_lower:
         await message.answer("💕 АНКУД — МОЙ ЛЮБИМЫЙ МАЛЬЧИК! САМЫЙ ЛУЧШИЙ! ТОЛЬКО ПОПРОБУЙТЕ ЕГО ОБИДЕТЬ, ВСЕХ НАХУЙ ПОРВУ! 😡💢")
         return
@@ -198,15 +215,9 @@ async def handle_message(message: types.Message):
                 random_user = random.choice(members)
                 who_text = text[9:].strip() if len(text) > 9 else ""
                 if who_text:
-                    await message.answer(
-                        f"🎯 {random_user.full_name} — {who_text}!\n"
-                        f"(ТЫКНУЛА ПАЛЬЦЕМ В СЛУЧАЙНОГО ЛОХА)"
-                    )
+                    await message.answer(f"🎯 {random_user.full_name} — {who_text}!\n(ТЫКНУЛА ПАЛЬЦЕМ В СЛУЧАЙНОГО ЛОХА)")
                 else:
-                    await message.answer(
-                        f"🎯 Я ВЫБРАЛА {random_user.full_name}!\n"
-                        f"(СЛУЧАЙНЫЙ ЧЕЛ ИЗ ЧАТА, ХА-ХА!)"
-                    )
+                    await message.answer(f"🎯 Я ВЫБРАЛА {random_user.full_name}!\n(СЛУЧАЙНЫЙ ЧЕЛ ИЗ ЧАТА, ХА-ХА!)")
             else:
                 await message.answer("🎯 НИКОГО НЕ НАШЛА! ВСЕ РАЗБЕЖАЛИСЬ, КРЫСЫ!")
         except:
@@ -218,7 +229,7 @@ async def handle_message(message: types.Message):
         await message.answer(random_angry())
         return
 
-    # Каори + любой текст (кроме инфо и кто)
+    # Каори + любой текст
     if text_lower.startswith("каори ") and not text_lower.startswith("каори инфо") and not text_lower.startswith("каори инфа") and not text_lower.startswith("каори кто"):
         await message.answer(random_angry())
         return
@@ -259,18 +270,12 @@ async def handle_message(message: types.Message):
         data = get_user_data(chat_id, user_id)
         size = data["boobs_size"]
         emoji = get_boobs_emoji(size)
-        if size == 0:
-            comment = "ПЛОСКАЯ ДОСКА! НАДО КАЧАТЬ!"
-        elif size < 5:
-            comment = "МАЛЕНЬКИЕ, НО АККУРАТНЕНЬКИЕ..."
-        elif size < 15:
-            comment = "УЖЕ НЕПЛОХО! СОЧНО!"
-        elif size < 30:
-            comment = "БОЛЬШИЕ! ВСЕ ЗАВИДУЮТ!"
-        elif size < 50:
-            comment = "ОГРОМНЫЕ! ШКАФ!"
-        else:
-            comment = "ГИГАНТСКИЕ! КАК ТЫ ХОДИШЬ?!"
+        if size == 0: comment = "ПЛОСКАЯ ДОСКА! НАДО КАЧАТЬ!"
+        elif size < 5: comment = "МАЛЕНЬКИЕ, НО АККУРАТНЕНЬКИЕ..."
+        elif size < 15: comment = "УЖЕ НЕПЛОХО! СОЧНО!"
+        elif size < 30: comment = "БОЛЬШИЕ! ВСЕ ЗАВИДУЮТ!"
+        elif size < 50: comment = "ОГРОМНЫЕ! ШКАФ!"
+        else: comment = "ГИГАНТСКИЕ! КАК ТЫ ХОДИШЬ?!"
         await message.answer(
             f"🍒 **СИСЬКИ {message.from_user.full_name}:**\n"
             f"📏 Размер: {size} см {emoji}\n"
@@ -282,7 +287,6 @@ async def handle_message(message: types.Message):
     # ========== КАЧАТЬ СИСЬКИ ==========
     if cmd in ["качать", "кач", "растить", "увеличить"]:
         data = get_user_data(chat_id, user_id)
-        # Шанс 60% что сиськи вырастут
         if random.random() < 0.6:
             growth = random.randint(1, 3)
             data["boobs_size"] += growth
@@ -360,7 +364,7 @@ async def handle_message(message: types.Message):
         users = user_data.get(chat_id, {})
         sorted_users = sorted(users.items(), key=lambda x: x[1]["msg_count"], reverse=True)[:15]
         if not sorted_users:
-            await message.answer("СТАТИСТИКИ ПОКА НЕТ! ПИШИТЕ БОЛЬШЕ!")
+            await message.answer("СТАТИСТИКИ ПОКА НЕТ!")
             return
         text_out = "💬 **ТОП БОЛТУНОВ:**\n\n"
         medals = ["🥇", "🥈", "🥉"] + ["▫"] * 12
@@ -398,7 +402,6 @@ async def handle_message(message: types.Message):
             "РАЗГРУЖАЛ ФУРЫ С ДЕРЬМОМ", "МЫЛ ПОЛЫ В ОБЩЕСТВЕННОМ ТУАЛЕТЕ",
             "РАБОТАЛ СТРИПТИЗЁРОМ ДЛЯ БАБУШЕК", "ПРОДАЛ ПОЧКУ НА ЧЁРНОМ РЫНКЕ",
             "ТАНЦЕВАЛ НА КАМЕРУ ДЛЯ ИЗВРАЩЕНЦЕВ", "ГРУЗИЛ МЕШКИ С ЦЕМЕНТОМ",
-            "РАЗДАВАЛ ЛИСТОВКИ НА МОРОЗЕ", "БЫЛ ПОДОПЫТНЫМ КРОЛИКОМ",
         ]
         job = random.choice(jobs)
         earned = random.randint(50, 300)
@@ -426,7 +429,7 @@ async def handle_message(message: types.Message):
         bonus_coins = random.randint(200, 1000)
         data["coins"] += bonus_coins
         data["last_daily"] = now
-        await message.answer(f"🎁 ЕЖЕДНЕВНЫЙ БОНУС: {bonus_coins} 💎! НЕ ПРОСРИ ВСЁ СРАЗУ!")
+        await message.answer(f"🎁 ЕЖЕДНЕВНЫЙ БОНУС: {bonus_coins} 💎!")
         return
 
     # ========== ПЕРЕВОД ==========
@@ -443,7 +446,7 @@ async def handle_message(message: types.Message):
             return
         data = get_user_data(chat_id, user_id)
         if data["coins"] < amount:
-            await message.answer(f"НЕТ СТОЛЬКО! У ТЕБЯ {data['coins']} 💎, НИЩЕБРОД!")
+            await message.answer(f"НЕТ СТОЛЬКО! У ТЕБЯ {data['coins']} 💎")
             return
         target_id = message.reply_to_message.from_user.id
         target = get_user_data(chat_id, target_id)
@@ -511,7 +514,10 @@ async def handle_message(message: types.Message):
             return
         text_out = "👶 **ТВОИ ДЕТИ:**\n\n"
         for i, child_id in enumerate(data["children"], 1):
-            name = await get_user_name(chat_id, child_id)
+            if isinstance(child_id, int):
+                name = await get_user_name(chat_id, child_id)
+            else:
+                name = child_id
             text_out += f"{i}. {name}\n"
         await message.answer(text_out)
         return
@@ -557,7 +563,7 @@ async def handle_message(message: types.Message):
         await message.answer(f"💔 {target_name} БОЛЬШЕ НЕ ТВОЙ РЕБЁНОК! МОНСТР!")
         return
 
-    # ========== СЕКС (сделать ребёнка) ==========
+    # ========== СЕКС ==========
     if cmd in ["секс", "sex", "трах", "ебать"]:
         if not message.reply_to_message:
             await message.answer("ОТВЕТЬ НА ТОГО, С КЕМ ХОЧЕШЬ ЗАНЯТЬСЯ СЕКСОМ!")
@@ -567,49 +573,65 @@ async def handle_message(message: types.Message):
         if user_id == target_id:
             await message.answer("САМ С СОБОЙ? ИДИ ЛУЧШЕ ПОДРОЧИ!")
             return
-
         data = get_user_data(chat_id, user_id)
         now = datetime.now()
-
-        # Кулдаун на секс — 10 минут
         if data["last_sex"] and (now - data["last_sex"]).seconds < 600:
             remaining = 600 - (now - data["last_sex"]).seconds
             mins, secs = remaining // 60, remaining % 60
             await message.answer(f"⏰ ТЫ ТОЛЬКО ЧТО ТРАХАЛСЯ! ОТДОХНИ {mins} МИН {secs} СЕК!")
             return
-
         data["last_sex"] = now
-
-        # Шанс успеха 70%
         if random.random() < 0.7:
-            # Успешный секс
             msg = random.choice(SEX_MESSAGES).replace("{partner}", target_name)
-            
-            # Шанс зачать ребёнка — 30%
             if random.random() < 0.3:
                 baby_name = random.choice(BABY_NAMES)
-                # Создаём "виртуального" ребёнка (сохраняем имя в список детей как строку)
                 data["children"].append(f"👶{baby_name}")
                 msg += f"\n\n🎉 И ВЫ ЗАЧАЛИ РЕБЁНКА! ЕГО БУДУТ ЗВАТЬ **{baby_name}**!"
             else:
                 msg += "\n\n😏 БЕЗ ПОСЛЕДСТВИЙ... НА ЭТОТ РАЗ."
-            
             await message.answer(f"🔥 {msg}")
         else:
-            # Секс не удался
             msg = random.choice(SEX_FAIL_MESSAGES).replace("{partner}", target_name)
             await message.answer(f"❌ {msg}")
         return
 
-    # ========== МАГАЗИН (расширенный) ==========
+    # ========== ОТЛИЗ ==========
+    if cmd in ["отлиз", "lick", "лизать", "отлизать", "полизать"]:
+        if not message.reply_to_message:
+            await message.answer("ОТВЕТЬ НА ТОГО, КОГО ХОЧЕШЬ ОТЛИЗАТЬ!")
+            return
+        target_id = message.reply_to_message.from_user.id
+        target_name = await get_user_name(chat_id, target_id)
+        data = get_user_data(chat_id, user_id)
+        now = datetime.now()
+
+        # Кулдаун 5 минут
+        if data["last_lick"] and (now - data["last_lick"]).seconds < 300:
+            remaining = 300 - (now - data["last_lick"]).seconds
+            mins, secs = remaining // 60, remaining % 60
+            await message.answer(f"⏰ ЯЗЫК УСТАЛ! ОТДОХНИ {mins} МИН {secs} СЕК!")
+            return
+
+        data["last_lick"] = now
+        licker_name = message.from_user.full_name
+
+        if user_id == target_id:
+            msg = random.choice(LICK_SELF_MESSAGES).replace("{licker}", licker_name)
+        else:
+            msg = random.choice(LICK_MESSAGES).replace("{licker}", licker_name).replace("{target}", target_name)
+
+        await message.answer(f"👅 {msg}")
+        return
+
+    # ========== МАГАЗИН ==========
     SHOP_ITEMS = [
         {"name": "🎭 СМЕНА РАНГА", "desc": "Сменит название ранга", "cost": 1000},
         {"name": "💎 УДВОЕНИЕ XP", "desc": "Двойной XP на 1 час", "cost": 500},
         {"name": "🍒 БУСТЕР СИСЕК", "desc": "+5 см к сиськам мгновенно", "cost": 1500},
         {"name": "💖 СВИДАНИЕ С КАОРИ", "desc": "Особое сообщение от Каори", "cost": 2000},
-        {"name": "🎰 ЛАКИ-БУСТ", "desc": "+20% к выигрышу в казино на 1 час", "cost": 800},
-        {"name": "💰 УДВОЕНИЕ ФАРМА", "desc": "Двойной доход с работы на 1 час", "cost": 600},
-        {"name": "👶 УСКОРИТЕЛЬ ДЕТЕЙ", "desc": "Следующий секс 100% приведёт к ребёнку", "cost": 1200},
+        {"name": "🎰 ЛАКИ-БУСТ", "desc": "+20% к выигрышу в казино", "cost": 800},
+        {"name": "💰 УДВОЕНИЕ ФАРМА", "desc": "Двойной доход с работы", "cost": 600},
+        {"name": "👶 УСКОРИТЕЛЬ ДЕТЕЙ", "desc": "Следующий секс 100% ребёнок", "cost": 1200},
         {"name": "🎩 VIP-СТАТУС", "desc": "Особая отметка в топе", "cost": 5000},
     ]
 
@@ -635,20 +657,16 @@ async def handle_message(message: types.Message):
             await message.answer(f"НЕ ХВАТАЕТ! НУЖНО {item['cost']} 💎, У ТЕБЯ {data['coins']} 💎")
             return
         data["coins"] -= item["cost"]
-        
-        # Особые эффекты
         if item["name"] == "🍒 БУСТЕР СИСЕК":
             data["boobs_size"] += 5
-            await message.answer(f"🍒 СИСЬКИ УВЕЛИЧЕНЫ НА 5 см! Теперь {data['boobs_size']} см {get_boobs_emoji(data['boobs_size'])}!")
+            await message.answer(f"🍒 СИСЬКИ +5 см! Теперь {data['boobs_size']} см {get_boobs_emoji(data['boobs_size'])}!")
         elif item["name"] == "💖 СВИДАНИЕ С КАОРИ":
             await message.answer(f"💖 {message.from_user.full_name}, ТЫ КУПИЛ СВИДАНИЕ СО МНОЙ... ЛАДНО, ТАК УЖ И БЫТЬ, ТЫ МНЕ НЕМНОГО НРАВИШЬСЯ! 😳💕")
         else:
             await message.answer(f"✅ КУПЛЕНО: {item['name']} ЗА {item['cost']} 💎!")
         return
 
-    # ========== КАЗИНО (расширенное) ==========
-
-    # ДУЭЛЬ
+    # ========== ДУЭЛЬ ==========
     if cmd in ["дуэль", "duel"]:
         if not message.reply_to_message:
             await message.answer("ОТВЕТЬ НА ТОГО, С КЕМ ДРАТЬСЯ!")
@@ -675,7 +693,7 @@ async def handle_message(message: types.Message):
         await message.answer(f"⚔ {w_name} ПОБЕДИЛ {l_name} И ЗАБРАЛ {bet} 💎!")
         return
 
-    # СЛОТЫ
+    # ========== СЛОТЫ ==========
     if cmd in ["слоты", "slots"]:
         if not args or not args[0].isdigit():
             await message.answer("СТАВКА? слоты 100")
@@ -685,7 +703,7 @@ async def handle_message(message: types.Message):
             await message.answer("МИНИМАЛЬНАЯ СТАВКА 10 💎!")
             return
         data = get_user_data(chat_id, user_id)
-        if bet <= 0 or data["coins"] < bet:
+        if data["coins"] < bet:
             await message.answer(f"НЕТ ДЕНЕГ! У ТЕБЯ {data['coins']} 💎")
             return
         emojis = ["🍒", "🍋", "🔔", "💎", "7️⃣", "🍀", "⭐", "👑"]
@@ -705,7 +723,7 @@ async def handle_message(message: types.Message):
         await message.answer(text_out)
         return
 
-    # МОНЕТКА
+    # ========== МОНЕТКА ==========
     if cmd in ["монетка", "coinflip"]:
         if len(args) < 2 or not args[0].isdigit():
             await message.answer("СТАВКА И ВЫБОР! монетка 100 орел")
@@ -717,7 +735,7 @@ async def handle_message(message: types.Message):
         choice = args[1].lower().replace("ё", "е")
         if choice == "орёл": choice = "орел"
         data = get_user_data(chat_id, user_id)
-        if bet <= 0 or data["coins"] < bet:
+        if data["coins"] < bet:
             await message.answer("НЕТ ДЕНЕГ!")
             return
         if choice not in ["орел", "решка"]:
@@ -732,7 +750,7 @@ async def handle_message(message: types.Message):
             await message.answer(f"🪙 {coin.upper()}! ПРОИГРЫШ: {bet} 💎!")
         return
 
-    # КРАЖА
+    # ========== КРАЖА ==========
     if cmd in ["кража", "steal", "украсть"]:
         if not message.reply_to_message:
             await message.answer("ОТВЕТЬ НА ЖЕРТВУ!")
@@ -760,7 +778,7 @@ async def handle_message(message: types.Message):
             await message.answer(f"🚨 ПОПАЛСЯ! ШТРАФ {penalty} 💎!")
         return
 
-    # РУЛЕТКА
+    # ========== РУЛЕТКА ==========
     if cmd in ["рулетка", "roulette"]:
         if not args or not args[0].isdigit():
             await message.answer("СТАВКА? рулетка 100")
@@ -773,13 +791,12 @@ async def handle_message(message: types.Message):
         if data["coins"] < bet:
             await message.answer(f"НЕТ ДЕНЕГ! У ТЕБЯ {data['coins']} 💎")
             return
-        # Русская рулетка: 1 из 6 — смерть (проигрыш x3)
         bullet = random.randint(1, 6)
         if bullet == 1:
             loss = bet * 3
             if data["coins"] >= loss:
                 data["coins"] -= loss
-                await message.answer(f"🔫 БАХ! ПРОИГРЫШ: {loss} 💎! ТЕБЕ НЕ ПОВЕЗЛО...")
+                await message.answer(f"🔫 БАХ! ПРОИГРЫШ: {loss} 💎!")
             else:
                 data["coins"] = 0
                 await message.answer(f"🔫 БАХ! ТЫ ПРОИГРАЛ ВСЁ! 0 💎...")
@@ -808,41 +825,44 @@ async def show_commands(message: types.Message):
         """😤 **КОМАНДЫ КАОРИ:**
 
 🗣 **ОБРАЩЕНИЯ:**
-Каори — позвать (получишь матом)
+Каори — позвать
 Каори инфа [вопрос] — процент
 Каори кто [текст] — случайный чел
 
 💰 **ЭКОНОМИКА:**
-фарма — работать (30 мин)
+фарма — работать
 бонус — ежедневный бонус
-баланс — баланс, сиськи, уровень
+баланс — баланс и стата
 перевод 100 — перевести (reply)
 топ — топ по уровням
-богачи — топ по монетам
+богачи — топ богачей
 
 💍 **ОТНОШЕНИЯ:**
 брак — предложить (reply)
 развод — развестись (500 💎)
-браки — список всех пар
+браки — список пар
 секс — заняться сексом (reply)
 дети — твои дети
 усыновить — усыновить (reply, 300 💎)
 отказ — отказаться от ребёнка (reply)
 
+👅 **ОТЛИЗ:**
+отлиз — отлизать кого-то (reply)
+
 🍒 **СИСЬКИ:**
 сиськи — посмотреть размер
-качать — увеличить сиськи
-топсисек — топ грудей чата
+качать — увеличить
+топсисек — топ грудей
 
 🛒 **МАГАЗИН:**
 магаз — магазин
-купить 1 — купить товар
+купить 1 — купить
 
 🎰 **КАЗИНО:**
 дуэль 100 — дуэль (reply)
 слоты 100 — слоты
 монетка 100 орел — орёл/решка
-рулетка 100 — русская рулетка (x2 или -x3)
+рулетка 100 — рулетка (x2/-x3)
 кража — украсть (reply)
 
 📊 **СТАТИСТИКА:**
@@ -862,11 +882,11 @@ async def marry_callback(callback: types.CallbackQuery):
     user2_id = int(parts[3])
 
     if callback.from_user.id != user2_id:
-        await callback.answer("ЭТО НЕ ТЕБЕ ПРЕДЛАГАЛИ, ОТЪЕБИСЬ!", show_alert=True)
+        await callback.answer("ЭТО НЕ ТЕБЕ ПРЕДЛАГАЛИ!", show_alert=True)
         return
 
     if action == "decline":
-        await callback.message.edit_text("💔 БРАК ОТКЛОНЁН! ЖЕСТОКО!")
+        await callback.message.edit_text("💔 БРАК ОТКЛОНЁН!")
         await callback.answer()
         return
 
