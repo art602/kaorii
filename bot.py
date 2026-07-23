@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # ================== ТОКЕН ==================
-TOKEN = ""8739520899:AAGJY_4dGtyUoHS80iK1uqXI29gLruGnTnQ""
+TOKEN = "8739520899:AAGJY_4dGtyUoHS80iK1uqXI29gLruGnTnQ"
 BOT_NAME = "kaorii"
 
 # ================== ХРАНИЛИЩА ==================
